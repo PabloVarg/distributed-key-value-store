@@ -1,0 +1,8 @@
+services:
+  node:
+    container_name: node
+    build:
+      dockerfile: ./deployments/docker/Dockerfile.golang.local
+      context: .
+    volumes:
+      - .:/app
