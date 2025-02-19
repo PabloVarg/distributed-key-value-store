@@ -38,6 +38,9 @@ func (n RaftNode) Loop(ctx context.Context) {
 		select {
 		case rd := <-n.raftNode.Ready():
 			n.logger.Info("node ready", "rd", rd)
+			n.raftNode.Advance()
+		case <-ctx.Done():
+			return
 		}
 	}
 }
