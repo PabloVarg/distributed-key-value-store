@@ -5,16 +5,20 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"os/signal"
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/pablovarg/distributed-key-value-store/raft"
 )
 
 func main() {
-	l := NewLogger(os.Stdout)
+	run(os.Stdout)
+}
+
+func run(w io.Writer) {
+	l := NewLogger(w)
 	n := raft.NewRaftNode(l)
 
 	ID, peersIDs := ReadConf()
@@ -22,7 +26,7 @@ func main() {
 
 	n.StartNode(ID, peersIDs)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	defer cancel()
 
 	var wg sync.WaitGroup
@@ -30,6 +34,7 @@ func main() {
 	go func() {
 		defer wg.Done()
 		n.Loop(ctx)
+		l.Info("shutting down", "ID", ID)
 	}()
 
 	wg.Wait()
