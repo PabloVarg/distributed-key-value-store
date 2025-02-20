@@ -28,11 +28,11 @@ func (n *RaftNode) StartNode(ID uint64, peers []uint64) {
 		MaxInflightMsgs: 256,
 	}
 
-	p := make([]raft.Peer, 0, 1)
-	p = append(p, raft.Peer{ID: ID})
+	p := []raft.Peer{{ID: ID}}
 	for _, peer := range peers {
 		p = append(p, raft.Peer{ID: peer})
 	}
+	n.logger.Info("raft: StartNode", "peers", p)
 
 	n.raftNode = raft.StartNode(c, p)
 }
