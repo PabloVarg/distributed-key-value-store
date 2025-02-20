@@ -6,3 +6,5 @@ services:
       context: .
     volumes:
       - .:/app
+    environment:
+        ID: 1

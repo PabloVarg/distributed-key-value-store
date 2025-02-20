@@ -18,9 +18,9 @@ func NewRaftNode(l *slog.Logger) RaftNode {
 	}
 }
 
-func (n *RaftNode) StartNode() {
+func (n *RaftNode) StartNode(ID uint64, peers []uint64) {
 	c := &raft.Config{
-		ID:              0x01,
+		ID:              ID,
 		ElectionTick:    10,
 		HeartbeatTick:   1,
 		Storage:         raft.NewMemoryStorage(),
@@ -28,9 +28,13 @@ func (n *RaftNode) StartNode() {
 		MaxInflightMsgs: 256,
 	}
 
-	n.raftNode = raft.StartNode(c, []raft.Peer{
-		{ID: 0x01},
-	})
+	p := make([]raft.Peer, 0, 1)
+	p = append(p, raft.Peer{ID: ID})
+	for _, peer := range peers {
+		p = append(p, raft.Peer{ID: peer})
+	}
+
+	n.raftNode = raft.StartNode(c, p)
 }
 
 func (n RaftNode) Loop(ctx context.Context) {
