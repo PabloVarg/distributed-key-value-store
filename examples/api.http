@@ -1,0 +1,10 @@
+# @name Put a value
+
+POST {{url}}/values
+
+{
+    "key": "something",
+    "value": "anything"
+}
+
+###
