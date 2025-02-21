@@ -2,14 +2,18 @@ package main
 
 import (
 	"context"
+	"errors"
 	"io"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
+	"github.com/pablovarg/distributed-key-value-store/api"
 	"github.com/pablovarg/distributed-key-value-store/raft"
 )
 
@@ -33,8 +37,39 @@ func run(w io.Writer) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
+
 		n.Loop(ctx)
 		l.Info("shutting down", "ID", ID)
+	}()
+
+	srv := api.NewHTTPServer(l, ":8000", n.RaftNode)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		if err := srv.ListenAndServe(); err != nil {
+			switch {
+			case errors.Is(err, http.ErrServerClosed):
+				l.Info("http server closing")
+			default:
+				l.Error("error on server ListenAndServe", "err", err)
+			}
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		select {
+		case <-ctx.Done():
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+
+			if err := srv.Shutdown(ctx); err != nil {
+				l.Error("error on server Shutdown", "err", err)
+			}
+		}
 	}()
 
 	wg.Wait()
