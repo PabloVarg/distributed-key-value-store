@@ -47,6 +47,7 @@ func run(w io.Writer) {
 	go func() {
 		defer wg.Done()
 
+		l.Info("server listening on port", "port", 8000)
 		if err := srv.ListenAndServe(); err != nil {
 			switch {
 			case errors.Is(err, http.ErrServerClosed):
