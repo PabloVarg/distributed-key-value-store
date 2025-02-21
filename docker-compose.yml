@@ -4,6 +4,8 @@ services:
     build:
       dockerfile: ./deployments/docker/Dockerfile.golang.local
       context: .
+    ports:
+      - 8000:8000
     volumes:
       - .:/app
     environment:
