@@ -48,12 +48,12 @@ func run(w io.Writer) {
 		l.Info("shutting down", "ID", c.ID)
 	}()
 
-	srv := api.NewHTTPServer(l, ":8000", n.RaftNode)
+	srv := api.NewHTTPServer(l, c.Addr, n.RaftNode)
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 
-		l.Info("server listening on port", "port", 8000)
+		l.Info("server listening on address", "addr", c.Addr)
 		if err := srv.ListenAndServe(); err != nil {
 			switch {
 			case errors.Is(err, http.ErrServerClosed):
@@ -104,6 +104,7 @@ func ReadConf() AppConf {
 	c.ID = ID
 
 	ReadPeersConf(&c)
+	ReadAddr(&c)
 
 	return c
 }
@@ -122,4 +123,14 @@ func ReadPeersConf(c *AppConf) {
 
 		c.Peers = append(c.Peers, peerID)
 	}
+}
+
+func ReadAddr(c *AppConf) {
+	addr, ok := os.LookupEnv("API_ADDRESS")
+	if !ok {
+		c.Addr = ":8000"
+		return
+	}
+
+	c.Addr = addr
 }
