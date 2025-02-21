@@ -73,6 +73,7 @@ func run(w io.Writer) {
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 
+			l.Info("server shutting down")
 			if err := srv.Shutdown(ctx); err != nil {
 				l.Error("error on server Shutdown", "err", err)
 			}
