@@ -17,6 +17,12 @@ import (
 	"github.com/pablovarg/distributed-key-value-store/raft"
 )
 
+type AppConf struct {
+	Addr  string
+	ID    uint64
+	Peers []uint64
+}
+
 func main() {
 	run(os.Stdout)
 }
@@ -25,10 +31,10 @@ func run(w io.Writer) {
 	l := NewLogger(w)
 	n := raft.NewRaftNode(l)
 
-	ID, peersIDs := ReadConf()
-	l.Info("read configuration", "ID", ID, "peers", peersIDs)
+	c := ReadConf()
+	l.Info("read configuration", "ID", c.ID, "peers", c.Peers)
 
-	n.StartNode(ID, peersIDs)
+	n.StartNode(c.ID, c.Peers)
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	defer cancel()
@@ -39,7 +45,7 @@ func run(w io.Writer) {
 		defer wg.Done()
 
 		n.Loop(ctx)
-		l.Info("shutting down", "ID", ID)
+		l.Info("shutting down", "ID", c.ID)
 	}()
 
 	srv := api.NewHTTPServer(l, ":8000", n.RaftNode)
@@ -80,7 +86,11 @@ func NewLogger(w io.Writer) *slog.Logger {
 	return slog.New(slog.NewJSONHandler(w, nil))
 }
 
-func ReadConf() (ID uint64, peers []uint64) {
+func ReadConf() AppConf {
+	c := AppConf{
+		Peers: make([]uint64, 0),
+	}
+
 	envID, ok := os.LookupEnv("ID")
 	if !ok {
 		panic("env ID is not configured")
@@ -90,7 +100,14 @@ func ReadConf() (ID uint64, peers []uint64) {
 	if err != nil {
 		panic("env ID is not a uint64")
 	}
+	c.ID = ID
 
+	ReadPeersConf(&c)
+
+	return c
+}
+
+func ReadPeersConf(c *AppConf) {
 	envPeers, ok := os.LookupEnv("PEERS")
 	if !ok {
 		return
@@ -102,8 +119,6 @@ func ReadConf() (ID uint64, peers []uint64) {
 			panic("a peer in PEERS is not a uint64")
 		}
 
-		peers = append(peers, peerID)
+		c.Peers = append(c.Peers, peerID)
 	}
-
-	return
 }
