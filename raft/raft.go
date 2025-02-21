@@ -11,7 +11,7 @@ import (
 type RaftNode struct {
 	ticker   time.Ticker
 	logger   *slog.Logger
-	raftNode raft.Node
+	RaftNode raft.Node
 	storage  *raft.MemoryStorage
 }
 
@@ -39,17 +39,17 @@ func (n *RaftNode) StartNode(ID uint64, peers []uint64) {
 	}
 	n.logger.Info("raft: StartNode", "peers", p)
 
-	n.raftNode = raft.StartNode(c, p)
+	n.RaftNode = raft.StartNode(c, p)
 }
 
 func (n RaftNode) Loop(ctx context.Context) {
 	for {
 		select {
 		case <-n.ticker.C:
-			n.raftNode.Tick()
-		case rd := <-n.raftNode.Ready():
+			n.RaftNode.Tick()
+		case rd := <-n.RaftNode.Ready():
 			n.storage.Append(rd.Entries)
-			n.raftNode.Advance()
+			n.RaftNode.Advance()
 		case <-ctx.Done():
 			return
 		}
