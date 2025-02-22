@@ -115,7 +115,7 @@ func ReadPeersConf(c *AppConf) {
 		return
 	}
 
-	for _, peer := range strings.Split(envPeers, ",") {
+	for peer := range strings.SplitSeq(envPeers, ",") {
 		peerID, err := strconv.ParseUint(strings.TrimSpace(peer), 10, 64)
 		if err != nil {
 			panic("a peer in PEERS is not a uint64")
