@@ -10,7 +10,8 @@ import (
 func routes(l *slog.Logger, n raft.Node) *http.ServeMux {
 	mux := http.NewServeMux()
 
-	mux.Handle("POST /values", NewPutHandler(l, n))
+	all := hitLoggingMiddleware(l)
+	mux.Handle("POST /values", all(NewPutHandler(l, n)))
 
 	return mux
 }
