@@ -1,0 +1,37 @@
+definitions:
+  api.NewPutHandler.input:
+    properties:
+      key:
+        type: string
+      value:
+        format: base64
+        type: string
+    required:
+    - key
+    - value
+    type: object
+info:
+  contact: {}
+  description: This API provides a simple interface for storing, retrieving, updating,
+    and deleting key-value pairs. It supports basic CRUD operations, enabling clients
+    to efficiently manage data. Keys are unique strings, and values can be any valid
+    JSON object
+  title: Key Value store API
+  version: "1.0"
+paths:
+  /values:
+    post:
+      consumes:
+      - application/json
+      description: inserts or updates a key's value
+      parameters:
+      - description: Key / Value pair
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/api.NewPutHandler.input'
+      responses:
+        "200":
+          description: OK
+swagger: "2.0"
