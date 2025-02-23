@@ -12,10 +12,16 @@ import (
 	"go.etcd.io/raft/v3"
 )
 
+// @title Put
+// @description inserts or updates a key's value
+// @accept json
+// @param input body api.NewPutHandler.input true "Key / Value pair"
+// @success 200
+// @router /values [post]
 func NewPutHandler(l *slog.Logger, n raft.Node) http.Handler {
 	type input struct {
-		Key   *string `json:"key" ,validate:"required"`
-		Value []byte  `json:"value" ,validate:"required"`
+		Key   *string `json:"key"   validate:"required"`
+		Value []byte  `json:"value" validate:"required" swaggertype:"string" format:"base64"`
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
