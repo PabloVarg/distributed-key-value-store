@@ -1,5 +1,6 @@
 {
   "*": {
-    "start": "trap \"docker compose down --remove-orphans && exit\" SIGINT && docker compose up --build"
+    "start": "trap \"docker compose down --remove-orphans && exit\" SIGINT && docker compose up --build",
+    "make": "go generate"
   }
 }
