@@ -32,7 +32,7 @@ func run(w io.Writer) {
 	n := raft.NewRaftNode(l)
 
 	c := ReadConf()
-	l.Info("read configuration", "ID", c.ID, "peers", c.Peers)
+	l.Info("read configuration", "conf", c)
 
 	n.StartNode(c.ID, c.Peers)
 
