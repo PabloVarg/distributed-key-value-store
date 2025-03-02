@@ -33,8 +33,8 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK"
+                    "201": {
+                        "description": "Created"
                     }
                 }
             }
@@ -42,6 +42,23 @@ const docTemplate = `{
         "/values/{key}": {
             "get": {
                 "description": "retrieves a key's value",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "key",
+                        "name": "query",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            },
+            "delete": {
+                "description": "deletes a key, value pair from the store",
                 "parameters": [
                     {
                         "type": "string",

@@ -32,9 +32,20 @@ paths:
         schema:
           $ref: '#/definitions/api.NewPutHandler.input'
       responses:
+        "201":
+          description: Created
+  /values/{key}:
+    delete:
+      description: deletes a key, value pair from the store
+      parameters:
+      - description: key
+        in: path
+        name: query
+        required: true
+        type: string
+      responses:
         "200":
           description: OK
-  /values/{key}:
     get:
       description: retrieves a key's value
       parameters:
