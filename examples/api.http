@@ -9,3 +9,9 @@ Content-Type: application/json
 }
 
 ###
+
+# @name Get a value
+
+GET {{url}}/values/something
+
+###
