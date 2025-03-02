@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	internalRaft "github.com/pablovarg/distributed-key-value-store/raft"
+	"github.com/pablovarg/distributed-key-value-store/store"
 	"go.etcd.io/raft/v3"
 )
 
@@ -57,5 +58,39 @@ func NewPutHandler(l *slog.Logger, n raft.Node) http.Handler {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		n.Propose(ctx, a)
+	})
+}
+
+// @title Get
+// @description retrieves a key's value
+// @param query path string true "key"
+// @success 200
+// @router /values/{key} [get]
+func NewGetHandler(l *slog.Logger, n raft.Node, s store.Store) http.Handler {
+	type output struct {
+		Key   string `json:"key"`
+		Value []byte `json:"value"`
+	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		key := r.PathValue("key")
+
+		value, err := s.Get(key)
+		if err != nil {
+			switch {
+			case errors.Is(err, store.KeyNotFoundError):
+				http.NotFound(w, r)
+			default:
+				internalError(l, r, w, err)
+			}
+			return
+		}
+
+		entry := output{
+			Key:   key,
+			Value: value,
+		}
+
+		writeJSON(l, entry, w, http.StatusOK)
 	})
 }

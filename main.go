@@ -15,6 +15,7 @@ import (
 
 	"github.com/pablovarg/distributed-key-value-store/api"
 	"github.com/pablovarg/distributed-key-value-store/raft"
+	"github.com/pablovarg/distributed-key-value-store/store"
 )
 
 type AppConf struct {
@@ -29,7 +30,8 @@ func main() {
 
 func run(w io.Writer) {
 	l := NewLogger(w)
-	n := raft.NewRaftNode(l)
+	s := store.NewKeyValueStore()
+	n := raft.NewRaftNode(l, s)
 
 	c := ReadConf()
 	l.Info("read configuration", "conf", c)
@@ -48,7 +50,7 @@ func run(w io.Writer) {
 		l.Info("shutting down", "ID", c.ID)
 	}()
 
-	srv := api.NewHTTPServer(l, c.Addr, n.RaftNode)
+	srv := api.NewHTTPServer(l, c.Addr, n.RaftNode, s)
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
