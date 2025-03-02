@@ -1,6 +1,7 @@
 # @name Put a value
 
 POST {{url}}/values
+Content-Type: application/json
 
 {
     "key": "something",
