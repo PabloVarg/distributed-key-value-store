@@ -15,3 +15,9 @@ Content-Type: application/json
 GET {{url}}/values/something
 
 ###
+
+# @name Delete a key, value pair
+
+DELETE {{url}}/values/something
+
+###
