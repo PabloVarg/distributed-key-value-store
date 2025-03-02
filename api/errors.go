@@ -8,11 +8,11 @@ func buildErrorsResponse(v validator.ValidationErrors) validationResponse {
 	res := make(map[string][]string)
 
 	for _, e := range v {
-		if _, ok := res[e.Tag()]; !ok {
-			res[e.Tag()] = make([]string, 0, 1)
+		if _, ok := res[e.Field()]; !ok {
+			res[e.Field()] = make([]string, 0, 1)
 		}
 
-		res[e.Tag()] = append(res[e.Tag()], e.Error())
+		res[e.Field()] = append(res[e.Field()], e.Tag())
 	}
 
 	return res
