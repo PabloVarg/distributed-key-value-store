@@ -67,7 +67,7 @@ func (n RaftNode) Loop(ctx context.Context) {
 					case Put:
 						n.keyValueStore.Put(action.Key, action.Value)
 					case Delete:
-						// TODO: Implement delete action
+						n.keyValueStore.Delete(action.Key)
 					}
 				}
 			}
