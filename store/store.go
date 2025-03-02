@@ -26,3 +26,13 @@ func (s Store) Get(key string) ([]byte, error) {
 
 	return res, nil
 }
+
+func (s Store) Delete(key string) error {
+	_, ok := s.values[key]
+	if !ok {
+		return KeyNotFoundError
+	}
+
+	delete(s.values, key)
+	return nil
+}
