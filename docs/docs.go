@@ -38,6 +38,25 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/values/{key}": {
+            "get": {
+                "description": "retrieves a key's value",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "key",
+                        "name": "query",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
         }
     },
     "definitions": {

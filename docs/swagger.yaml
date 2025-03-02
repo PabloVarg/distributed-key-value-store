@@ -34,4 +34,16 @@ paths:
       responses:
         "200":
           description: OK
+  /values/{key}:
+    get:
+      description: retrieves a key's value
+      parameters:
+      - description: key
+        in: path
+        name: query
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
 swagger: "2.0"
