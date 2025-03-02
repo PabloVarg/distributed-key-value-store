@@ -8,6 +8,7 @@ import (
 
 const (
 	Put = iota
+	Get
 	Delete
 )
 
@@ -26,4 +27,15 @@ func EncodeAction(l *slog.Logger, a StoreAction) ([]byte, error) {
 	}
 
 	return b.Bytes(), nil
+}
+
+func DecodeAction(l *slog.Logger, data []byte) (StoreAction, error) {
+	var res StoreAction
+
+	if err := gob.NewDecoder(bytes.NewReader(data)).Decode(&res); err != nil {
+		l.Error("error decoding raft action", "err", err)
+		return StoreAction{}, err
+	}
+
+	return res, nil
 }
