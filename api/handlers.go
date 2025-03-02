@@ -100,3 +100,36 @@ func NewGetHandler(l *slog.Logger, n raft.Node, s store.Store) http.Handler {
 		writeJSON(l, entry, w, http.StatusOK)
 	})
 }
+
+// @title Delete
+// @description deletes a key, value pair from the store
+// @param query path string true "key"
+// @success 200
+// @router /values/{key} [delete]
+func NewDeleteHandler(l *slog.Logger, n raft.Node) http.Handler {
+	type output struct {
+		Key   string `json:"key"`
+		Value []byte `json:"value"`
+	}
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		key := r.PathValue("key")
+
+		action, err := internalRaft.EncodeAction(l, internalRaft.StoreAction{
+			Action: internalRaft.Delete,
+			Key:    key,
+		})
+		if err != nil {
+			internalError(l, r, w, err)
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if err := n.Propose(ctx, action); err != nil {
+			internalError(l, r, w, err)
+			return
+		}
+	})
+}
