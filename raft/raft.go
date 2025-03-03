@@ -8,6 +8,7 @@ import (
 
 	"github.com/pablovarg/distributed-key-value-store/store"
 	"go.etcd.io/raft/v3"
+	"go.etcd.io/raft/v3/raftpb"
 )
 
 type RaftNode struct {
@@ -52,10 +53,12 @@ func (n RaftNode) Loop(ctx context.Context) {
 		case <-n.ticker.C:
 			n.RaftNode.Tick()
 		case rd := <-n.RaftNode.Ready():
-			n.logger.Info("message", "message", rd.Entries)
-
 			if rd.CommittedEntries != nil {
 				for entry := range slices.Values(rd.CommittedEntries) {
+					if entry.Data == nil || entry.Type != raftpb.EntryNormal {
+						continue
+					}
+
 					action, err := DecodeAction(n.logger, entry.Data)
 					if err != nil {
 						n.logger.Error("committed unreadable entry, ignoring", "data", entry.Data)
