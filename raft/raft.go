@@ -53,6 +53,7 @@ func (n RaftNode) Loop(ctx context.Context) {
 		case <-n.ticker.C:
 			n.RaftNode.Tick()
 		case rd := <-n.RaftNode.Ready():
+			n.logger.Debug("node ready", "message", rd)
 			if rd.CommittedEntries != nil {
 				for entry := range slices.Values(rd.CommittedEntries) {
 					if entry.Data == nil || entry.Type != raftpb.EntryNormal {
