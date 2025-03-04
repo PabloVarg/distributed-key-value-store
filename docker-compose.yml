@@ -10,3 +10,4 @@ services:
       - .:/app
     environment:
         ID: 1
+        DEBUG: true
