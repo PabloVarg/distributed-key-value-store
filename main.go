@@ -19,6 +19,7 @@ import (
 )
 
 type AppConf struct {
+	Debug bool
 	Addr  string
 	ID    uint64
 	Peers []uint64
@@ -29,12 +30,10 @@ func main() {
 }
 
 func run(w io.Writer) {
-	l := NewLogger(w)
+	c := ReadConf()
+	l := NewLogger(w, c.Debug)
 	s := store.NewKeyValueStore()
 	n := raft.NewRaftNode(l, s)
-
-	c := ReadConf()
-	l.Info("read configuration", "conf", c)
 
 	n.StartNode(c.ID, c.Peers)
 
@@ -85,8 +84,21 @@ func run(w io.Writer) {
 	wg.Wait()
 }
 
-func NewLogger(w io.Writer) *slog.Logger {
-	return slog.New(slog.NewJSONHandler(w, nil))
+func NewLogger(w io.Writer, debug bool) *slog.Logger {
+	level := slog.LevelInfo
+	if debug {
+		level = slog.LevelDebug
+	}
+
+	l := slog.New(slog.NewJSONHandler(w, &slog.HandlerOptions{
+		Level: level,
+	}))
+
+	if debug {
+		l.Info("DEBUG flag detected")
+	}
+
+	return l
 }
 
 func ReadConf() AppConf {
@@ -107,8 +119,19 @@ func ReadConf() AppConf {
 
 	ReadPeersConf(&c)
 	ReadAddr(&c)
+	ReadDebugFlag(&c)
 
 	return c
+}
+
+func ReadDebugFlag(c *AppConf) {
+	debug := os.Getenv("DEBUG")
+
+	if strings.TrimSpace(strings.ToLower(debug)) != "true" {
+		return
+	}
+
+	c.Debug = true
 }
 
 func ReadPeersConf(c *AppConf) {
