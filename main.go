@@ -106,9 +106,9 @@ func ReadConf() AppConf {
 		Peers: make([]string, 0),
 	}
 
-	envID, ok := os.LookupEnv("ID")
-	if !ok {
-		panic("env ID is not configured")
+	envID := os.Getenv("ID")
+	if strings.TrimSpace(envID) == "" {
+		envID = "1"
 	}
 
 	ID, err := strconv.ParseUint(envID, 10, 64)
