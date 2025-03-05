@@ -56,6 +56,13 @@ func (n RaftNode) Loop(ctx context.Context) {
 			n.logger.Debug("node ready", "message", rd)
 			if rd.CommittedEntries != nil {
 				for entry := range slices.Values(rd.CommittedEntries) {
+					if entry.Type == raftpb.EntryConfChange {
+						var cc raftpb.ConfChange
+						cc.Unmarshal(entry.Data)
+						n.RaftNode.ApplyConfChange(cc)
+						continue
+					}
+
 					if entry.Data == nil || entry.Type != raftpb.EntryNormal {
 						continue
 					}
