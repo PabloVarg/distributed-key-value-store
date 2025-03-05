@@ -57,8 +57,7 @@ func (n RaftNode) Loop(ctx context.Context) {
 		case rd := <-n.RaftNode.Ready():
 			n.logger.Debug("node ready", "message", rd)
 
-			n.storage.Append(rd.Entries)
-			n.storage.SetHardState(rd.HardState)
+			n.saveState(rd)
 
 			if rd.CommittedEntries != nil {
 				for entry := range slices.Values(rd.CommittedEntries) {
@@ -95,4 +94,16 @@ func (n RaftNode) Loop(ctx context.Context) {
 			return
 		}
 	}
+}
+
+func (n RaftNode) saveState(rd raft.Ready) {
+	if !raft.IsEmptyHardState(rd.HardState) {
+		n.storage.SetHardState(rd.HardState)
+	}
+
+	if !raft.IsEmptySnap(rd.Snapshot) {
+		n.storage.ApplySnapshot(rd.Snapshot)
+	}
+
+	n.storage.Append(rd.Entries)
 }
