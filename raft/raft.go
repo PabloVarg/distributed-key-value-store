@@ -56,6 +56,10 @@ func (n RaftNode) Loop(ctx context.Context) {
 			n.RaftNode.Tick()
 		case rd := <-n.RaftNode.Ready():
 			n.logger.Debug("node ready", "message", rd)
+
+			n.storage.Append(rd.Entries)
+			n.storage.SetHardState(rd.HardState)
+
 			if rd.CommittedEntries != nil {
 				for entry := range slices.Values(rd.CommittedEntries) {
 					if entry.Type == raftpb.EntryConfChange {
@@ -86,7 +90,6 @@ func (n RaftNode) Loop(ctx context.Context) {
 				}
 			}
 
-			n.storage.Append(rd.Entries)
 			n.RaftNode.Advance()
 		case <-ctx.Done():
 			return
