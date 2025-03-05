@@ -22,7 +22,7 @@ type AppConf struct {
 	Debug bool
 	Addr  string
 	ID    uint64
-	Peers []uint64
+	Peers []string
 }
 
 func main() {
@@ -103,7 +103,7 @@ func NewLogger(w io.Writer, debug bool) *slog.Logger {
 
 func ReadConf() AppConf {
 	c := AppConf{
-		Peers: make([]uint64, 0),
+		Peers: make([]string, 0),
 	}
 
 	envID, ok := os.LookupEnv("ID")
@@ -140,14 +140,7 @@ func ReadPeersConf(c *AppConf) {
 		return
 	}
 
-	for peer := range strings.SplitSeq(envPeers, ",") {
-		peerID, err := strconv.ParseUint(strings.TrimSpace(peer), 10, 64)
-		if err != nil {
-			panic("a peer in PEERS is not a uint64")
-		}
-
-		c.Peers = append(c.Peers, peerID)
-	}
+	c.Peers = strings.Split(envPeers, ",")
 }
 
 func ReadAddr(c *AppConf) {

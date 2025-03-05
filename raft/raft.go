@@ -17,6 +17,7 @@ type RaftNode struct {
 	RaftNode      raft.Node
 	storage       *raft.MemoryStorage
 	keyValueStore store.Store
+	peers         []string
 }
 
 func NewRaftNode(l *slog.Logger, keyValueStore store.Store) RaftNode {
@@ -28,7 +29,7 @@ func NewRaftNode(l *slog.Logger, keyValueStore store.Store) RaftNode {
 	}
 }
 
-func (n *RaftNode) StartNode(ID uint64, peers []uint64) {
+func (n *RaftNode) StartNode(ID uint64, peers []string) {
 	c := &raft.Config{
 		ID:              ID,
 		ElectionTick:    10,
@@ -39,10 +40,11 @@ func (n *RaftNode) StartNode(ID uint64, peers []uint64) {
 	}
 
 	p := []raft.Peer{{ID: ID}}
-	for _, peer := range peers {
-		p = append(p, raft.Peer{ID: peer})
+	for i := range peers {
+		p = append(p, raft.Peer{ID: uint64(i) + ID})
 	}
-	n.logger.Info("raft: StartNode", "peers", p)
+	n.peers = peers
+	n.logger.Info("raft: StartNode", "peers", peers)
 
 	n.RaftNode = raft.StartNode(c, p)
 }
