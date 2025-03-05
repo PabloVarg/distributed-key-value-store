@@ -58,36 +58,7 @@ func (n RaftNode) Loop(ctx context.Context) {
 			n.logger.Debug("node ready", "message", rd)
 
 			n.saveState(rd)
-
-			if rd.CommittedEntries != nil {
-				for entry := range slices.Values(rd.CommittedEntries) {
-					if entry.Type == raftpb.EntryConfChange {
-						n.logger.Debug("raft configuration change", "entry", entry)
-						var cc raftpb.ConfChange
-						cc.Unmarshal(entry.Data)
-						n.RaftNode.ApplyConfChange(cc)
-						continue
-					}
-
-					if entry.Data == nil || entry.Type != raftpb.EntryNormal {
-						continue
-					}
-
-					action, err := DecodeAction(n.logger, entry.Data)
-					if err != nil {
-						n.logger.Error("committed unreadable entry, ignoring", "data", entry.Data)
-						continue
-					}
-
-					n.logger.Info("applying committed entry", "action", action)
-					switch action.Action {
-					case Put:
-						n.keyValueStore.Put(action.Key, action.Value)
-					case Delete:
-						n.keyValueStore.Delete(action.Key)
-					}
-				}
-			}
+			n.handleCommittedEntries(rd)
 
 			n.RaftNode.Advance()
 		case <-ctx.Done():
@@ -106,4 +77,42 @@ func (n RaftNode) saveState(rd raft.Ready) {
 	}
 
 	n.storage.Append(rd.Entries)
+}
+
+func (n RaftNode) handleCommittedEntries(rd raft.Ready) {
+	if rd.CommittedEntries == nil {
+		return
+	}
+
+	for entry := range slices.Values(rd.CommittedEntries) {
+		switch entry.Type {
+		case raftpb.EntryConfChange:
+			n.logger.Debug("raft configuration change", "entry", entry)
+			var cc raftpb.ConfChange
+			cc.Unmarshal(entry.Data)
+			n.RaftNode.ApplyConfChange(cc)
+		case raftpb.EntryNormal:
+			if entry.Data == nil {
+				break
+			}
+
+			action, err := DecodeAction(n.logger, entry.Data)
+			if err != nil {
+				n.logger.Error("committed unreadable entry, ignoring", "data", entry.Data)
+				continue
+			}
+
+			n.applyAction(action)
+			n.logger.Info("applying committed entry", "action", action)
+		}
+	}
+}
+
+func (n RaftNode) applyAction(action StoreAction) {
+	switch action.Action {
+	case Put:
+		n.keyValueStore.Put(action.Key, action.Value)
+	case Delete:
+		n.keyValueStore.Delete(action.Key)
+	}
 }
