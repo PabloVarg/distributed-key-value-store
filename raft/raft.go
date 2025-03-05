@@ -57,6 +57,7 @@ func (n RaftNode) Loop(ctx context.Context) {
 			if rd.CommittedEntries != nil {
 				for entry := range slices.Values(rd.CommittedEntries) {
 					if entry.Type == raftpb.EntryConfChange {
+						n.logger.Debug("raft configuration change", "entry", entry)
 						var cc raftpb.ConfChange
 						cc.Unmarshal(entry.Data)
 						n.RaftNode.ApplyConfChange(cc)
