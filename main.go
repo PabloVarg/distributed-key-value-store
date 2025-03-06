@@ -16,6 +16,7 @@ import (
 	"github.com/pablovarg/distributed-key-value-store/api"
 	"github.com/pablovarg/distributed-key-value-store/raft"
 	"github.com/pablovarg/distributed-key-value-store/store"
+	"go.etcd.io/raft/v3/raftpb"
 )
 
 type AppConf struct {
@@ -30,10 +31,14 @@ func main() {
 }
 
 func run(w io.Writer) {
+    messagesTx := make(chan raftpb.Message, 100)
+    messagesRx := make(chan raftpb.Message, 100)
+
 	c := ReadConf()
 	l := NewLogger(w, c.Debug)
 	s := store.NewKeyValueStore()
-	n := raft.NewRaftNode(l, s)
+    t := raft.NewTransport(l, ":8001", c.Peers, messagesRx, messagesTx)
+	n := raft.NewRaftNode(l, s, messagesTx, messagesRx)
 
 	n.StartNode(c.ID, c.Peers)
 
@@ -80,6 +85,13 @@ func run(w io.Writer) {
 			}
 		}
 	}()
+
+    wg.Add(1)
+    go func () {
+        defer wg.Done()
+
+        t.ListenAndServe(ctx)
+    }()
 
 	wg.Wait()
 }

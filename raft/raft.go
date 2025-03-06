@@ -18,14 +18,18 @@ type RaftNode struct {
 	storage       *raft.MemoryStorage
 	keyValueStore store.Store
 	peers         []string
+	messagesTx  chan<- raftpb.Message
+	messagesRx  <-chan raftpb.Message
 }
 
-func NewRaftNode(l *slog.Logger, keyValueStore store.Store) RaftNode {
+func NewRaftNode(l *slog.Logger, keyValueStore store.Store, messagesTx chan<-raftpb.Message, messagesRx <-chan raftpb.Message) RaftNode {
 	return RaftNode{
 		logger:        l,
 		ticker:        *time.NewTicker(100 * time.Millisecond),
 		storage:       raft.NewMemoryStorage(),
 		keyValueStore: keyValueStore,
+        messagesTx: messagesTx,
+        messagesRx: messagesRx,
 	}
 }
 
@@ -59,6 +63,7 @@ func (n RaftNode) Loop(ctx context.Context) {
 
 			n.saveState(rd)
 			n.handleCommittedEntries(rd)
+            n.sendMessages(rd.Messages)
 
 			n.RaftNode.Advance()
 		case <-ctx.Done():
@@ -114,5 +119,12 @@ func (n RaftNode) applyAction(action StoreAction) {
 		n.keyValueStore.Put(action.Key, action.Value)
 	case Delete:
 		n.keyValueStore.Delete(action.Key)
+	}
+}
+
+func (n RaftNode) sendMessages(messages []raftpb.Message) {
+	for message := range slices.Values(messages) {
+        n.logger.Debug("sendMessages", "message", message)
+		n.messagesTx <- message
 	}
 }
