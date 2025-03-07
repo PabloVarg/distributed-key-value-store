@@ -31,14 +31,14 @@ func main() {
 }
 
 func run(w io.Writer) {
-    messagesTx := make(chan raftpb.Message, 100)
-    messagesRx := make(chan raftpb.Message, 100)
+	messagesTx := make(chan raftpb.Message, 100)
+	messagesRx := make(chan raftpb.Message, 100)
 
 	c := ReadConf()
 	l := NewLogger(w, c.Debug)
 	s := store.NewKeyValueStore()
-    t := raft.NewTransport(l, ":8001", c.Peers, messagesRx, messagesTx)
-	n := raft.NewRaftNode(l, s, messagesTx, messagesRx)
+	t := raft.NewTransport(l, ":8001", c.Peers, messagesRx, messagesTx)
+	n := raft.NewRaftNode(l, s, messagesRx, messagesTx)
 
 	n.StartNode(c.ID, c.Peers)
 
@@ -86,12 +86,12 @@ func run(w io.Writer) {
 		}
 	}()
 
-    wg.Add(1)
-    go func () {
-        defer wg.Done()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
 
-        t.ListenAndServe(ctx)
-    }()
+		t.ListenAndServe(ctx)
+	}()
 
 	wg.Wait()
 }
