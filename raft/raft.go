@@ -58,6 +58,21 @@ func (n *RaftNode) StartNode(ID uint64, peers []string) {
 	n.RaftNode = raft.StartNode(c, p)
 }
 
+func (n RaftNode) StepToMessages(ctx context.Context) {
+	for {
+		select {
+		case message, ok := <-n.messagesRx:
+			if !ok {
+				return
+			}
+
+			n.RaftNode.Step(ctx, message)
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
 func (n RaftNode) Loop(ctx context.Context) {
 	for {
 		select {

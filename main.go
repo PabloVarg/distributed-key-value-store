@@ -60,6 +60,13 @@ func run(w io.Writer) {
 		l.Info("shutting down", "ID", c.ID)
 	}()
 
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		n.StepToMessages(ctx)
+	}()
+
 	srv := api.NewHTTPServer(l, c.Addr, n.RaftNode, s)
 	wg.Add(1)
 	go func() {
