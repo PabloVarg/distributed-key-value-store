@@ -36,23 +36,30 @@ func NewTransport(
 }
 
 func (t Transport) ListenAndServe(ctx context.Context) {
-    var wg sync.WaitGroup
+	t.logger.Debug("transport", "step", "starting routines")
+	var wg sync.WaitGroup
 
-    wg.Add(1)
-    go func () {
-        defer wg.Done()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		defer t.logger.Debug("transport", "step", "exit send routine")
 
-        t.Send()
-    }()
+		t.logger.Debug("transport", "step", "start send routine")
+		t.Send()
+	}()
 
-    wg.Add(1)
-    go func ()  {
-        defer wg.Done()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		defer t.logger.Debug("transport", "step", "exit listen routine")
 
-        t.Listen()
-    }()
+		t.logger.Debug("transport", "step", "start listen routine")
+		t.Listen()
+	}()
 
-    <-ctx.Done()
+	wg.Wait()
+
+	t.logger.Debug("transport", "step", "exit routines")
 }
 
 func (t Transport) Send() {
