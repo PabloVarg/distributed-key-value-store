@@ -115,6 +115,7 @@ func (t Transport) ReadMessages(conn net.Conn) {
 				return
 			default:
 				t.logger.Error("transport", "step", "reading", "err", err)
+				return
 			}
 		}
 		b = b[:n]
