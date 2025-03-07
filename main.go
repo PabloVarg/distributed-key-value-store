@@ -31,14 +31,20 @@ func main() {
 }
 
 func run(w io.Writer) {
-	messagesTx := make(chan raftpb.Message, 100)
-	messagesRx := make(chan raftpb.Message, 100)
+	messagesTx := make(chan raftpb.Message)
+	messagesRx := make(chan raftpb.Message)
 
 	c := ReadConf()
 	l := NewLogger(w, c.Debug)
 	s := store.NewKeyValueStore()
-	t := raft.NewTransport(l, ":8001", c.Peers, messagesRx, messagesTx)
-	n := raft.NewRaftNode(l, s, messagesRx, messagesTx)
+	t := raft.NewTransport(
+		l,
+		":8001",
+		func(u uint64) string { return c.Peers[u-c.ID] },
+		messagesRx,
+		messagesTx,
+	)
+	n := raft.NewRaftNode(l, s, messagesTx, messagesRx)
 
 	n.StartNode(c.ID, c.Peers)
 

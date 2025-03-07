@@ -7,14 +7,16 @@ import (
 	"net"
 	"sync"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"go.etcd.io/raft/v3/raftpb"
 )
+
+type PeersLookup func(uint64) string
 
 type Transport struct {
 	logger         *slog.Logger
 	addr           string
-	peers          []string
+	peers          PeersLookup
 	messagesRxChan <-chan raftpb.Message
 	messagesTxChan chan<- raftpb.Message
 }
@@ -22,7 +24,7 @@ type Transport struct {
 func NewTransport(
 	l *slog.Logger,
 	addr string,
-	peers []string,
+	peers PeersLookup,
 	messagesRx <-chan raftpb.Message,
 	messagesTx chan<- raftpb.Message,
 ) Transport {
@@ -64,20 +66,20 @@ func (t Transport) ListenAndServe(ctx context.Context) {
 
 func (t Transport) Send() {
 	for message := range t.messagesRxChan {
-		t.logger.Debug("transport send", "message", message)
-		conn, err := net.Dial("tcp", t.peers[message.To])
+		t.logger.Debug("transport", "step", "send message", "message", message)
+		conn, err := net.Dial("tcp", t.peers(message.To))
 		if err != nil {
-			panic(err) // TODO: Better error handling
+			continue
 		}
 
 		msg, err := proto.Marshal(&message)
 		if err != nil {
-			panic(err) // TODO: Better error handling
+			continue
 		}
 
-		t.logger.Info("transport rx", "msg", msg)
+		t.logger.Info("transport", "step", "send message", "message", msg)
 		if _, err := conn.Write(msg); err != nil {
-			panic(err) // TODO: Better error handling
+			continue
 		}
 
 		conn.Close()
@@ -106,22 +108,24 @@ func (t Transport) ReadMessages(conn net.Conn) {
 
 	for {
 		b := make([]byte, 1024)
-		_, err := conn.Read(b)
+		n, err := conn.Read(b)
 		if err != nil {
 			switch {
 			case errors.Is(err, net.ErrClosed):
 				return
 			default:
-				panic(err) // TODO: Better error handling
+				t.logger.Error("transport", "step", "reading", "err", err)
 			}
 		}
+		b = b[:n]
+		t.logger.Info("transport", "step", "receive bytes", "bytes", b)
 
 		var msg raftpb.Message
 		if err := proto.Unmarshal(b, &msg); err != nil {
-			panic(err) // TODO: Better error handling
+			t.logger.Error("transport", "step", "unmarshaling", "err", err)
 		}
 
-		t.logger.Info("transport tx", "msg", msg)
+		t.logger.Info("transport", "step", "receive message", "message", msg)
 		t.messagesTxChan <- msg
 	}
 }
