@@ -1,5 +1,5 @@
 services:
-  node:
+  node: &node
     container_name: node
     build:
       dockerfile: ./deployments/docker/Dockerfile.golang.local
@@ -13,27 +13,13 @@ services:
         PEERS: "node:8001,node2:8001,node3:8001"
 
   node2:
+    <<: *node
     container_name: node2
-    build:
-      dockerfile: ./deployments/docker/Dockerfile.golang.local
-      context: .
     ports:
       - 8001:8000
-    volumes:
-      - .:/app
-    environment:
-        DEBUG: true
-        PEERS: "node:8001,node2:8001,node3:8001"
 
   node3:
+    <<: *node
     container_name: node3
-    build:
-      dockerfile: ./deployments/docker/Dockerfile.golang.local
-      context: .
     ports:
       - 8002:8000
-    volumes:
-      - .:/app
-    environment:
-        DEBUG: true
-        PEERS: "node:8001,node2:8001,node3:8001"
