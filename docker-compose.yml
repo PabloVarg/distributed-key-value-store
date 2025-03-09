@@ -10,16 +10,20 @@ services:
       - .:/app
     environment:
         DEBUG: true
-        PEERS: "node:8001,node2:8001,node3:8001"
+        PEERS: "node2:8001,node3:8001"
 
   node2:
     <<: *node
     container_name: node2
     ports:
       - 8001:8000
+    environment:
+        PEERS: "node:8001,node3:8001"
 
   node3:
     <<: *node
     container_name: node3
     ports:
       - 8002:8000
+    environment:
+        PEERS: "node:8001,node2:8001"
