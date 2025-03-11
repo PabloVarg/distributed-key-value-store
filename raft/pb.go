@@ -66,7 +66,15 @@ func (t Transport) ListenAndServe(ctx context.Context) {
 
 func (t Transport) Send() {
 	for message := range t.messagesRxChan {
-		t.logger.Debug("transport", "step", "send message", "message", message)
+		t.logger.Debug(
+			"transport",
+			"step",
+			"send message",
+			"message",
+			message,
+			"to",
+			t.peers(message.To),
+		)
 		conn, err := net.Dial("tcp", t.peers(message.To))
 		if err != nil {
 			continue
@@ -89,14 +97,15 @@ func (t Transport) Send() {
 func (t Transport) Listen() {
 	l, err := net.Listen("tcp", t.addr)
 	if err != nil {
-		panic(err) // TODO: Better error handling
+		t.logger.Error("transport", "step", "listen", "err", err)
 	}
 	defer l.Close()
 
 	for {
 		conn, err := l.Accept()
 		if err != nil {
-			panic(err) // TODO: Better error handling
+			t.logger.Error("transport", "step", "listen", "err", err)
+			continue
 		}
 
 		go t.ReadMessages(conn)
