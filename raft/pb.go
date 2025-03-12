@@ -47,7 +47,7 @@ func (t Transport) ListenAndServe(ctx context.Context) {
 		defer t.logger.Debug("transport", "step", "exit send routine")
 
 		t.logger.Debug("transport", "step", "start send routine")
-		t.Send()
+		t.SendLoop()
 	}()
 
 	wg.Add(1)
@@ -64,7 +64,7 @@ func (t Transport) ListenAndServe(ctx context.Context) {
 	t.logger.Debug("transport", "step", "exit routines")
 }
 
-func (t Transport) Send() {
+func (t Transport) SendLoop() {
 	for message := range t.messagesRxChan {
 		t.logger.Debug(
 			"transport",
@@ -92,6 +92,35 @@ func (t Transport) Send() {
 
 		conn.Close()
 	}
+}
+
+func (t Transport) Send(message raftpb.Message, to string) raftpb.Message {
+	t.logger.Debug(
+		"transport",
+		"step",
+		"send message",
+		"message",
+		message,
+		"to",
+		to,
+	)
+	conn, err := net.Dial("tcp", to)
+	if err != nil {
+		return raftpb.Message{}
+	}
+	defer conn.Close()
+
+	msg, err := proto.Marshal(&message)
+	if err != nil {
+		return raftpb.Message{}
+	}
+
+	t.logger.Info("transport", "step", "send message", "message", msg)
+	if _, err := conn.Write(msg); err != nil {
+		return raftpb.Message{}
+	}
+
+	return message
 }
 
 func (t Transport) Listen() {

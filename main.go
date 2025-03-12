@@ -40,11 +40,11 @@ func run(w io.Writer) {
 	t := raft.NewTransport(
 		l,
 		":8001",
-		func(u uint64) string { return c.Peers[u-c.ID] },
+		func(u uint64) string { return c.Peers[u-1] },
 		messagesRx,
 		messagesTx,
 	)
-	n := raft.NewRaftNode(l, s, messagesTx, messagesRx)
+	n := raft.NewRaftNode(l, s, messagesTx, messagesRx, t)
 
 	n.StartNode(c.ID, c.Peers)
 

@@ -20,6 +20,7 @@ type RaftNode struct {
 	peers         []string
 	messagesTx    chan<- raftpb.Message
 	messagesRx    <-chan raftpb.Message
+	transport     Transport
 }
 
 func NewRaftNode(
@@ -27,14 +28,16 @@ func NewRaftNode(
 	keyValueStore store.Store,
 	messagesRx <-chan raftpb.Message,
 	messagesTx chan<- raftpb.Message,
+	transport Transport,
 ) RaftNode {
 	return RaftNode{
 		logger:        l,
-		ticker:        *time.NewTicker(100 * time.Millisecond),
+		ticker:        *time.NewTicker(1 * time.Second),
 		storage:       raft.NewMemoryStorage(),
 		keyValueStore: keyValueStore,
 		messagesTx:    messagesTx,
 		messagesRx:    messagesRx,
+		transport:     transport,
 	}
 }
 
@@ -50,9 +53,20 @@ func (n *RaftNode) StartNode(ID uint64, peers []string) {
 
 	p := []raft.Peer{{ID: ID}}
 	for i := range peers {
-		p = append(p, raft.Peer{ID: uint64(i) + ID})
+		offset := uint64(1)
+		if i+1 >= int(ID) {
+			offset = ID
+		}
+		p = append(p, raft.Peer{ID: uint64(i) + offset})
 	}
-	n.peers = peers
+	n.peers = make([]string, 0, len(peers)+1)
+	for i, peer := range peers {
+		if uint64(i+1) == ID {
+			n.peers = append(n.peers, "")
+		}
+		n.peers = append(n.peers, peer)
+	}
+
 	n.logger.Info("raft: StartNode", "peers", peers)
 
 	n.RaftNode = raft.StartNode(c, p)
@@ -143,8 +157,22 @@ func (n RaftNode) applyAction(action StoreAction) {
 }
 
 func (n RaftNode) sendMessages(messages []raftpb.Message) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	for message := range slices.Values(messages) {
-		n.logger.Debug("sendMessages", "message", message)
-		n.messagesTx <- message
+		n.logger.Debug(
+			"sendMessages",
+			"message",
+			message,
+			"to",
+			message.To,
+			"idx",
+			message.To-n.RaftNode.Status().ID,
+			"peers",
+			n.peers,
+		)
+		// n.messagesTx <- message
+		n.RaftNode.Step(ctx, n.transport.Send(message, n.peers[message.To-1]))
 	}
 }
