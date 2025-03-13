@@ -3,6 +3,7 @@ package raft
 import (
 	"context"
 	"errors"
+	"io"
 	"log/slog"
 	"net"
 	"sync"
@@ -44,15 +45,6 @@ func (t Transport) ListenAndServe(ctx context.Context) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		defer t.logger.Debug("transport", "step", "exit send routine")
-
-		t.logger.Debug("transport", "step", "start send routine")
-		t.SendLoop()
-	}()
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
 		defer t.logger.Debug("transport", "step", "exit listen routine")
 
 		t.logger.Debug("transport", "step", "start listen routine")
@@ -64,59 +56,24 @@ func (t Transport) ListenAndServe(ctx context.Context) {
 	t.logger.Debug("transport", "step", "exit routines")
 }
 
-func (t Transport) SendLoop() {
-	for message := range t.messagesRxChan {
-		t.logger.Debug(
-			"transport",
-			"step",
-			"send message",
-			"message",
-			message,
-			"to",
-			t.peers(message.To),
-		)
-		conn, err := net.Dial("tcp", t.peers(message.To))
-		if err != nil {
-			continue
-		}
-
-		msg, err := proto.Marshal(&message)
-		if err != nil {
-			continue
-		}
-
-		t.logger.Info("transport", "step", "send message", "message", msg)
-		if _, err := conn.Write(msg); err != nil {
-			continue
-		}
-
-		conn.Close()
-	}
-}
-
 func (t Transport) Send(message raftpb.Message, to string) raftpb.Message {
-	t.logger.Debug(
-		"transport",
-		"step",
-		"send message",
-		"message",
-		message,
-		"to",
-		to,
-	)
+	t.logger.Debug("transport", "step", "send message", "message", message)
 	conn, err := net.Dial("tcp", to)
 	if err != nil {
+		t.logger.Debug("transport", "step", "send message", "err", err, "to", to)
 		return raftpb.Message{}
 	}
 	defer conn.Close()
 
 	msg, err := proto.Marshal(&message)
 	if err != nil {
+		t.logger.Debug("transport", "step", "send message", "err", err)
 		return raftpb.Message{}
 	}
 
 	t.logger.Info("transport", "step", "send message", "message", msg)
 	if _, err := conn.Write(msg); err != nil {
+		t.logger.Debug("transport", "step", "send message", "err", err)
 		return raftpb.Message{}
 	}
 
@@ -149,7 +106,7 @@ func (t Transport) ReadMessages(conn net.Conn) {
 		n, err := conn.Read(b)
 		if err != nil {
 			switch {
-			case errors.Is(err, net.ErrClosed):
+			case errors.Is(err, io.EOF):
 				return
 			default:
 				t.logger.Error("transport", "step", "reading", "err", err)
@@ -157,7 +114,6 @@ func (t Transport) ReadMessages(conn net.Conn) {
 			}
 		}
 		b = b[:n]
-		t.logger.Info("transport", "step", "receive bytes", "bytes", b)
 
 		var msg raftpb.Message
 		if err := proto.Unmarshal(b, &msg); err != nil {
