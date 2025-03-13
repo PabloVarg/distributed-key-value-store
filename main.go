@@ -44,7 +44,7 @@ func run(w io.Writer) {
 		messagesRx,
 		messagesTx,
 	)
-	n := raft.NewRaftNode(l, s, messagesTx, messagesRx, t)
+	n := raft.NewRaftNode(l, s, messagesTx, t)
 
 	n.StartNode(c.ID, c.Peers)
 

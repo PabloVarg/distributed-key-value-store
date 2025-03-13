@@ -18,7 +18,6 @@ type RaftNode struct {
 	storage       *raft.MemoryStorage
 	keyValueStore store.Store
 	peers         []string
-	messagesTx    chan<- raftpb.Message
 	messagesRx    <-chan raftpb.Message
 	transport     Transport
 }
@@ -27,15 +26,13 @@ func NewRaftNode(
 	l *slog.Logger,
 	keyValueStore store.Store,
 	messagesRx <-chan raftpb.Message,
-	messagesTx chan<- raftpb.Message,
 	transport Transport,
 ) RaftNode {
 	return RaftNode{
 		logger:        l,
-		ticker:        *time.NewTicker(1 * time.Second),
+		ticker:        *time.NewTicker(200 * time.Millisecond),
 		storage:       raft.NewMemoryStorage(),
 		keyValueStore: keyValueStore,
-		messagesTx:    messagesTx,
 		messagesRx:    messagesRx,
 		transport:     transport,
 	}
@@ -54,11 +51,12 @@ func (n *RaftNode) StartNode(ID uint64, peers []string) {
 	p := []raft.Peer{{ID: ID}}
 	for i := range peers {
 		offset := uint64(1)
-		if i+1 >= int(ID) {
+		if uint64(i+1) >= ID {
 			offset = ID
 		}
 		p = append(p, raft.Peer{ID: uint64(i) + offset})
 	}
+
 	n.peers = make([]string, 0, len(peers)+1)
 	for i, peer := range peers {
 		if uint64(i+1) == ID {
@@ -161,18 +159,7 @@ func (n RaftNode) sendMessages(messages []raftpb.Message) {
 	defer cancel()
 
 	for message := range slices.Values(messages) {
-		n.logger.Debug(
-			"sendMessages",
-			"message",
-			message,
-			"to",
-			message.To,
-			"idx",
-			message.To-n.RaftNode.Status().ID,
-			"peers",
-			n.peers,
-		)
-		// n.messagesTx <- message
+		n.logger.Debug("sendMessages", "message", message)
 		n.RaftNode.Step(ctx, n.transport.Send(message, n.peers[message.To-1]))
 	}
 }
