@@ -70,7 +70,7 @@ func (t Transport) Send(message raftpb.Message, to string) raftpb.Message {
 		return raftpb.Message{}
 	}
 
-	t.logger.Info("transport", "step", "send message", "message", msg)
+	t.logger.Debug("transport", "step", "send message", "message", msg)
 	if _, err := conn.Write(msg); err != nil {
 		t.logger.Debug("transport", "step", "send message", "err", err)
 		return raftpb.Message{}
@@ -110,6 +110,6 @@ func (t Transport) ReadMessages(conn net.Conn) {
 		t.logger.Error("transport", "step", "unmarshaling", "err", err)
 	}
 
-	t.logger.Info("transport", "step", "receive message", "message", msg)
+	t.logger.Debug("transport", "step", "receive message", "message", msg)
 	t.messagesTxChan <- msg
 }
