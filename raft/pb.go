@@ -2,7 +2,6 @@ package raft
 
 import (
 	"context"
-	"errors"
 	"io"
 	"log/slog"
 	"net"
@@ -101,26 +100,16 @@ func (t Transport) Listen() {
 func (t Transport) ReadMessages(conn net.Conn) {
 	defer conn.Close()
 
-	for {
-		b := make([]byte, 1024)
-		n, err := conn.Read(b)
-		if err != nil {
-			switch {
-			case errors.Is(err, io.EOF):
-				return
-			default:
-				t.logger.Error("transport", "step", "reading", "err", err)
-				return
-			}
-		}
-		b = b[:n]
-
-		var msg raftpb.Message
-		if err := proto.Unmarshal(b, &msg); err != nil {
-			t.logger.Error("transport", "step", "unmarshaling", "err", err)
-		}
-
-		t.logger.Info("transport", "step", "receive message", "message", msg)
-		t.messagesTxChan <- msg
+	b, err := io.ReadAll(conn)
+	if err != nil {
+		t.logger.Error("transport", "step", "reading", "err", err)
 	}
+
+	var msg raftpb.Message
+	if err := proto.Unmarshal(b, &msg); err != nil {
+		t.logger.Error("transport", "step", "unmarshaling", "err", err)
+	}
+
+	t.logger.Info("transport", "step", "receive message", "message", msg)
+	t.messagesTxChan <- msg
 }
