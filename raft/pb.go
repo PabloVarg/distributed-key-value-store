@@ -13,7 +13,7 @@ import (
 
 type PeersLookup func(uint64) string
 
-type Transport struct {
+type TCPTransport struct {
 	logger         *slog.Logger
 	addr           string
 	peers          PeersLookup
@@ -27,8 +27,8 @@ func NewTransport(
 	peers PeersLookup,
 	messagesRx <-chan raftpb.Message,
 	messagesTx chan<- raftpb.Message,
-) Transport {
-	return Transport{
+) TCPTransport {
+	return TCPTransport{
 		logger:         l,
 		addr:           addr,
 		peers:          peers,
@@ -37,7 +37,7 @@ func NewTransport(
 	}
 }
 
-func (t Transport) ListenAndServe(ctx context.Context) {
+func (t TCPTransport) ListenAndServe(ctx context.Context) {
 	t.logger.Debug("transport", "step", "starting routines")
 	var wg sync.WaitGroup
 
@@ -55,7 +55,7 @@ func (t Transport) ListenAndServe(ctx context.Context) {
 	t.logger.Debug("transport", "step", "exit routines")
 }
 
-func (t Transport) Send(message raftpb.Message, to string) raftpb.Message {
+func (t TCPTransport) Send(message raftpb.Message, to string) raftpb.Message {
 	t.logger.Debug("transport", "step", "send message", "message", message)
 	conn, err := net.Dial("tcp", to)
 	if err != nil {
@@ -79,7 +79,7 @@ func (t Transport) Send(message raftpb.Message, to string) raftpb.Message {
 	return message
 }
 
-func (t Transport) Listen() {
+func (t TCPTransport) Listen() {
 	l, err := net.Listen("tcp", t.addr)
 	if err != nil {
 		t.logger.Error("transport", "step", "listen", "err", err)
@@ -97,7 +97,7 @@ func (t Transport) Listen() {
 	}
 }
 
-func (t Transport) ReadMessages(conn net.Conn) {
+func (t TCPTransport) ReadMessages(conn net.Conn) {
 	defer conn.Close()
 
 	b, err := io.ReadAll(conn)

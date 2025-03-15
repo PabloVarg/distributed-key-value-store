@@ -19,14 +19,14 @@ type RaftNode struct {
 	keyValueStore store.Store
 	peers         []string
 	messagesRx    <-chan raftpb.Message
-	transport     Transport
+	transport     Transporter
 }
 
 func NewRaftNode(
 	l *slog.Logger,
 	keyValueStore store.Store,
 	messagesRx <-chan raftpb.Message,
-	transport Transport,
+	transport Transporter,
 ) RaftNode {
 	return RaftNode{
 		logger:        l,
