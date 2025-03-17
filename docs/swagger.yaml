@@ -19,6 +19,12 @@ info:
   title: Key Value store API
   version: "1.0"
 paths:
+  /status/:
+    get:
+      description: gets raft state
+      responses:
+        "200":
+          description: OK
   /values:
     post:
       consumes:

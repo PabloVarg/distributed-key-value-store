@@ -15,6 +15,16 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/status/": {
+            "get": {
+                "description": "gets raft state",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
         "/values": {
             "post": {
                 "description": "inserts or updates a key's value",
