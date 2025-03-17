@@ -133,3 +133,19 @@ func NewDeleteHandler(l *slog.Logger, n raft.Node) http.Handler {
 		}
 	})
 }
+
+// @title Status
+// @description gets raft state
+// @success 200
+// @router /status/ [get]
+func NewStatusHandler(l *slog.Logger, n raft.Node) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		status, err := n.Status().MarshalJSON()
+		if err != nil {
+			internalError(l, r, w, err)
+			return
+		}
+
+		w.Write(status)
+	})
+}

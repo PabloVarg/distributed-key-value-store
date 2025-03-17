@@ -18,6 +18,7 @@ func routes(l *slog.Logger, n raft.Node, s store.Store) *http.ServeMux {
 	mux.Handle("POST /values", all(NewPutHandler(l, n)))
 	mux.Handle("GET /values/{key}", all(NewGetHandler(l, n, s)))
 	mux.Handle("DELETE /values/{key}", all(NewDeleteHandler(l, n)))
+	mux.Handle("GET /status", all(NewStatusHandler(l, n)))
 
 	mux.HandleFunc(
 		"/swagger-ui/",
