@@ -32,6 +32,11 @@ func NewPutHandler(l *slog.Logger, n raft.Node) http.Handler {
 			return
 		}
 
+		if !internalRaft.IsLeader(n) {
+			RedirectToLeader(l, w, n)
+			return
+		}
+
 		v := validator.New(validator.WithRequiredStructEnabled())
 		if err := v.Struct(in); err != nil {
 			var vError validator.ValidationErrors
@@ -81,6 +86,11 @@ func NewGetHandler(l *slog.Logger, n raft.Node, s store.Store) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		key := r.PathValue("key")
 
+		if !internalRaft.IsLeader(n) {
+			RedirectToLeader(l, w, n)
+			return
+		}
+
 		value, err := s.Get(key)
 		if err != nil {
 			switch {
@@ -114,6 +124,11 @@ func NewDeleteHandler(l *slog.Logger, n raft.Node) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		key := r.PathValue("key")
+
+		if !internalRaft.IsLeader(n) {
+			RedirectToLeader(l, w, n)
+			return
+		}
 
 		action, err := internalRaft.EncodeAction(l, internalRaft.StoreAction{
 			Action: internalRaft.Delete,

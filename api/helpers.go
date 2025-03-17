@@ -1,8 +1,11 @@
 package api
 
 import (
+	"fmt"
 	"log/slog"
 	"net/http"
+
+	"go.etcd.io/raft/v3"
 )
 
 func internalError(l *slog.Logger, r *http.Request, w http.ResponseWriter, err error) {
@@ -24,4 +27,9 @@ func unprocessableEntity(
 	v validationResponse,
 ) {
 	writeJSON(l, v, w, http.StatusUnprocessableEntity)
+}
+
+func RedirectToLeader(l *slog.Logger, w http.ResponseWriter, n raft.Node) {
+	w.Header().Set("Location", fmt.Sprintf("%d", n.Status().Lead))
+	w.WriteHeader(http.StatusTemporaryRedirect)
 }

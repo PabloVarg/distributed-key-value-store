@@ -163,3 +163,7 @@ func (n RaftNode) sendMessages(messages []raftpb.Message) {
 		n.RaftNode.Step(ctx, n.transport.Send(message, n.peers[message.To-1]))
 	}
 }
+
+func IsLeader(n raft.Node) bool {
+	return n.Status().ID == n.Status().Lead
+}
