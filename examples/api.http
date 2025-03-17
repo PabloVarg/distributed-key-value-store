@@ -21,3 +21,9 @@ GET {{url}}/values/something
 DELETE {{url}}/values/something
 
 ###
+
+# @name Get raft status
+
+GET {{url}}/status
+
+###
