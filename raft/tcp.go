@@ -56,7 +56,7 @@ func (t TCPTransport) ListenAndServe(ctx context.Context) {
 }
 
 func (t TCPTransport) Send(message raftpb.Message, to string) raftpb.Message {
-	t.logger.Debug("transport", "step", "send message", "message", message)
+	t.logger.Debug("transport", "step", "send message", "message", message, "to", to)
 	conn, err := net.Dial("tcp", to)
 	if err != nil {
 		t.logger.Debug("transport", "step", "send message", "err", err, "to", to)
@@ -80,6 +80,7 @@ func (t TCPTransport) Send(message raftpb.Message, to string) raftpb.Message {
 }
 
 func (t TCPTransport) Listen() {
+	t.logger.Error("transport", "step", "init", "addr", t.addr)
 	l, err := net.Listen("tcp", t.addr)
 	if err != nil {
 		t.logger.Error("transport", "step", "listen", "err", err)

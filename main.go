@@ -20,10 +20,12 @@ import (
 )
 
 type AppConf struct {
-	Debug bool
-	Addr  string
-	ID    uint64
-	Peers []string
+	Debug      bool
+	Addr       string
+	PeerAddr   string
+	ID         uint64
+	Peers      []string
+	StorageDir string
 }
 
 func main() {
@@ -39,7 +41,7 @@ func run(w io.Writer) {
 	s := store.NewKeyValueStore()
 	t := raft.NewTransport(
 		l,
-		":8001",
+		c.PeerAddr,
 		func(u uint64) string { return c.Peers[u-1] },
 		messagesRx,
 		messagesTx,
@@ -144,6 +146,7 @@ func ReadConf() AppConf {
 
 	ReadPeersConf(&c)
 	ReadAddr(&c)
+	ReadPeerAddr(&c)
 	ReadDebugFlag(&c)
 
 	return c
@@ -176,4 +179,14 @@ func ReadAddr(c *AppConf) {
 	}
 
 	c.Addr = addr
+}
+
+func ReadPeerAddr(c *AppConf) {
+	addr, ok := os.LookupEnv("PEER_ADDRESS")
+	if !ok {
+		c.PeerAddr = ":8001"
+		return
+	}
+
+	c.PeerAddr = addr
 }

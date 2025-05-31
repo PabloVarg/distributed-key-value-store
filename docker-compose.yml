@@ -1,32 +1,37 @@
 services:
   node: &node
     container_name: node
+    ports:
+      - 8001:8000
     build:
       dockerfile: ./deployments/docker/Dockerfile.golang.local
       context: .
-    ports:
-      - 8000:8000
     volumes:
       - .:/app
     environment:
         ID: 1
         DEBUG: true
         PEERS: "node2:8001,node3:8001"
+        STORAGE_DIR: "tmp/state-1"
 
   node2:
     <<: *node
     container_name: node2
     ports:
-      - 8001:8000
+      - 8002:8000
     environment:
         ID: 2
+        DEBUG: true
         PEERS: "node:8001,node3:8001"
+        STORAGE_DIR: "tmp/state-2"
 
   node3:
     <<: *node
     container_name: node3
     ports:
-      - 8002:8000
+      - 8003:8000
     environment:
         ID: 3
+        DEBUG: true
         PEERS: "node:8001,node2:8001"
+        STORAGE_DIR: "tmp/state-3"

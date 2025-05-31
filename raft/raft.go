@@ -105,6 +105,8 @@ func (n RaftNode) Loop(ctx context.Context) {
 }
 
 func (n RaftNode) saveState(rd raft.Ready) {
+	n.storage.Append(rd.Entries)
+
 	if !raft.IsEmptyHardState(rd.HardState) {
 		n.storage.SetHardState(rd.HardState)
 	}
@@ -112,8 +114,6 @@ func (n RaftNode) saveState(rd raft.Ready) {
 	if !raft.IsEmptySnap(rd.Snapshot) {
 		n.storage.ApplySnapshot(rd.Snapshot)
 	}
-
-	n.storage.Append(rd.Entries)
 }
 
 func (n RaftNode) handleCommittedEntries(rd raft.Ready) {
@@ -159,8 +159,11 @@ func (n RaftNode) sendMessages(messages []raftpb.Message) {
 	defer cancel()
 
 	for message := range slices.Values(messages) {
-		n.logger.Debug("sendMessages", "message", message)
-		n.RaftNode.Step(ctx, n.transport.Send(message, n.peers[message.To-1]))
+		n.logger.Debug("send message", "message", message, "peers", n.peers)
+		received := n.transport.Send(message, n.peers[message.To-1])
+		n.logger.Debug("receive message", "message", message)
+
+		n.RaftNode.Step(ctx, received)
 	}
 }
 
